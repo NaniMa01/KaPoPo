@@ -221,7 +221,14 @@
             </div>
 
             <!-- Right Controls -->
-            <div class="flex items-center gap-2 sm:gap-3">
+            <div class="flex items-center gap-2 sm:gap-2.5">
+                <!-- API Key Status Button -->
+                <button onclick="app.openAiModal()" class="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium border bg-slate-900/90 border-slate-700/80 text-slate-300 hover:border-violet-500/50 transition-all" title="Gemini API-Key verwalten">
+                    <span id="apiKeyStatusDot" class="w-2 h-2 rounded-full bg-amber-400"></span>
+                    <i data-lucide="key-round" class="w-3.5 h-3.5 text-violet-400"></i>
+                    <span id="apiKeyStatusText" class="hidden lg:inline">API-Key</span>
+                </button>
+
                 <!-- Blind Mode / Spoiler Toggle -->
                 <button id="spoilerToggleBtn" onclick="app.toggleSpoilerMode()" class="flex items-center gap-2 px-3 py-2 rounded-xl text-xs sm:text-sm font-medium border transition-all bg-slate-900/90 border-slate-700/80 text-slate-300 hover:border-violet-500/50" title="Blendet alle Themen & Vorschauen in der Lobby aus">
                     <i data-lucide="eye-off" id="spoilerIcon" class="w-4 h-4 text-amber-400"></i>
@@ -232,7 +239,7 @@
                 <!-- Party / Multiplayer Button -->
                 <button onclick="app.openPartyModal()" class="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-800/90 hover:bg-slate-700/90 text-white border border-slate-700 transition-all">
                     <i data-lucide="trophy" class="w-4 h-4 text-amber-400"></i>
-                    <span>Party-Modus</span>
+                    <span class="hidden sm:inline">Party-Modus</span>
                     <span id="partyCountBadge" class="px-1.5 py-0.5 text-[11px] rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/30 font-mono">0</span>
                 </button>
 
@@ -531,6 +538,31 @@
 
             <!-- Form View -->
             <div id="aiModalForm" class="space-y-5">
+                <!-- DIRECT GEMINI API KEY INPUT BOX -->
+                <div class="p-4 rounded-2xl bg-slate-900/95 border border-violet-500/30 space-y-2">
+                    <div class="flex items-center justify-between gap-2 flex-wrap">
+                        <label for="aiApiKeyInput" class="text-xs font-bold text-violet-300 flex items-center gap-1.5">
+                            <i data-lucide="key-round" class="w-3.5 h-3.5"></i>
+                            <span>Google Gemini API-Key (wird lokal im Browser gespeichert)</span>
+                        </label>
+                        <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener" class="text-[11px] font-semibold text-fuchsia-400 hover:text-fuchsia-300 underline">
+                            Kostenlosen Key im Google AI Studio holen ↗
+                        </a>
+                    </div>
+                    <div class="flex gap-2">
+                        <input id="aiApiKeyInput" type="password" placeholder="AIzaSy... (hier deinen Gemini API-Key einfügen)" oninput="app.saveApiKeyFromInput(this.value)" class="flex-1 bg-slate-950 border border-slate-700 focus:border-violet-500 rounded-xl px-3.5 py-2 text-xs sm:text-sm font-mono text-white placeholder-slate-500 focus:outline-none transition">
+                        <button type="button" onclick="app.toggleApiKeyVisibility()" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700 transition" title="Key anzeigen/verbergen">
+                            👁️
+                        </button>
+                        <button type="button" onclick="app.clearApiKey()" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-red-950/60 text-slate-400 hover:text-red-300 text-xs font-semibold border border-slate-700 transition" title="Gespeicherten Key löschen">
+                            Löschen
+                        </button>
+                    </div>
+                    <p id="apiKeyHelperHint" class="text-[11px] text-slate-400">
+                        Dein Key beginnt mit <code class="text-violet-300">AIza...</code> und verlässt niemals deinen Browser.
+                    </p>
+                </div>
+
                 <!-- Topic Input + Random Dice -->
                 <div class="space-y-2">
                     <div class="flex items-center justify-between">
@@ -569,7 +601,6 @@
                 </div>
 
                 <!-- Category Tag & Image Source Mode -->
-                <!-- Category Tag -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div class="space-y-1.5">
                         <label class="text-xs sm:text-sm font-bold text-slate-200">4. Kategorie in der Bibliothek</label>
@@ -591,7 +622,12 @@
                 </div>
 
                 <!-- Error Box -->
-                <div id="aiErrorBox" class="hidden rounded-xl bg-red-950/70 border border-red-500/40 p-3.5 text-xs text-red-200"></div>
+                <div id="aiErrorBox" class="hidden rounded-xl bg-red-950/70 border border-red-500/40 p-3.5 text-xs text-red-200 space-y-2">
+                    <div id="aiErrorText"></div>
+                    <button type="button" onclick="app.generateOfflineSmartDeck()" class="px-3.5 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs transition inline-flex items-center gap-1.5">
+                        <span>⚡ Trotzdem sofort mit lokalem Smart-Generator erstellen (ohne API-Key)</span>
+                    </button>
+                </div>
 
                 <!-- Action Buttons -->
                 <div class="pt-2 flex flex-col sm:flex-row items-center justify-end gap-3 border-t border-slate-800">
@@ -775,7 +811,6 @@
                 if (q.includes("cart") || q.includes("supermarket") || q.includes("einkauf")) return PHOTO_LIBRARY.shopping_cart;
                 if (q.includes("stamp") || q.includes("form") || q.includes("behörde") || q.includes("paper")) return PHOTO_LIBRARY.folders_stamp;
 
-                // Deterministic pick from curated high-res pool
                 let hash = seedIndex;
                 for (let i = 0; i < q.length; i++) hash = (hash * 31 + q.charCodeAt(i)) % 997;
                 return FALLBACK_PHOTO_LIST[Math.abs(hash) % FALLBACK_PHOTO_LIST.length];
@@ -806,29 +841,32 @@
                 return null;
             },
 
-          async generateGeminiPhoto(promptText) {
-    try {
-        const apiKey = localStorage.getItem('kapopo_gemini_key');
-        if (!apiKey) return null;
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`;
-        const payload = {
-            contents: [{ parts: [{ text: `Editorial documentary press photograph, 16:9 photography, clean background: ${promptText}` }] }]
+            async generateGeminiPhoto(promptText) {
+                try {
+                    const rawKey = localStorage.getItem('kapopo_gemini_key') || '';
+                    const apiKey = rawKey.replace(/["'\s]/g, '');
+                    if (!apiKey) return null;
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent?key=${encodeURIComponent(apiKey)}`;
+                    const payload = {
+                        contents: [{ parts: [{ text: `Realistic documentary press photograph, natural lighting, 16:9 editorial photography, no text overlay: ${promptText}` }] }],
+                        generationConfig: { responseModalities: ["TEXT", "IMAGE"] }
+                    };
+                    const res = await fetch(apiUrl, {
+                        method: "POST",
+                        headers: { 
+                            "Content-Type": "application/json",
+                            "x-goog-api-key": apiKey
+                        },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!res.ok) return null;
+                    const result = await res.json();
+                    const base64Data = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
+                    if (base64Data) return `data:image/png;base64,${base64Data}`;
+                } catch (e) {}
+                return null;
+            }
         };
-        const res = await fetch(apiUrl, {
-            method: "POST",
-            headers: { 
-                "Content-Type": "application/json",
-                "x-goog-api-key": apiKey
-            },
-            body: JSON.stringify(payload)
-        });
-        if (!res.ok) return null;
-        const result = await res.json();
-        const base64Data = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
-        if (base64Data) return `data:image/png;base64,${base64Data}`;
-    } catch (e) {}
-    return null;
-}
 
         /* ============================================================================
          * 2. ORIGINAL KAPOPO PRE-INSTALLED LIBRARY (6 FULL 12-SLIDE DECKS)
@@ -1801,9 +1839,10 @@
 
             // Game Settings
             settings: {
-                timerSeconds: 300, // 5 min default
-                autoAdvanceSec: 0, // 0 = manual
+                timerSeconds: 300,
+                autoAdvanceSec: 0,
                 slideLimit: 12,
+                improMode: 'impro',
                 themeOverride: 'deck'
             },
 
@@ -1831,6 +1870,7 @@
 
             init() {
                 this.loadStoredData();
+                this.syncApiKeyUi();
                 this.renderDeckGrid();
                 this.renderPartyStatus();
                 this.setupKeyboardShortcuts();
@@ -1838,12 +1878,77 @@
                 lucide.createIcons();
             },
 
+            /* -------------------- API KEY UI MANAGEMENT -------------------- */
+            getCleanApiKey() {
+                const raw = localStorage.getItem('kapopo_gemini_key') || '';
+                const cleaned = raw.replace(/^Bearer\s+/i, '').replace(/["'\s]/g, '');
+                if (!cleaned || cleaned === 'null' || cleaned === 'undefined') return '';
+                return cleaned;
+            },
+
+            saveApiKeyFromInput(val) {
+                const cleaned = (val || '').replace(/^Bearer\s+/i, '').replace(/["'\s]/g, '');
+                if (cleaned) {
+                    localStorage.setItem('kapopo_gemini_key', cleaned);
+                } else {
+                    localStorage.removeItem('kapopo_gemini_key');
+                }
+                this.syncApiKeyUi();
+            },
+
+            clearApiKey() {
+                localStorage.removeItem('kapopo_gemini_key');
+                const input = document.getElementById('aiApiKeyInput');
+                if (input) input.value = '';
+                this.syncApiKeyUi();
+                this.showToast('API-Key wurde aus dem Browser gelöscht.');
+            },
+
+            toggleApiKeyVisibility() {
+                const input = document.getElementById('aiApiKeyInput');
+                if (!input) return;
+                input.type = input.type === 'password' ? 'text' : 'password';
+            },
+
+            syncApiKeyUi() {
+                const key = this.getCleanApiKey();
+                const input = document.getElementById('aiApiKeyInput');
+                const dot = document.getElementById('apiKeyStatusDot');
+                const text = document.getElementById('apiKeyStatusText');
+                const hint = document.getElementById('apiKeyHelperHint');
+
+                if (input && document.activeElement !== input) {
+                    input.value = key;
+                }
+
+                if (key && key.startsWith('AIza')) {
+                    if (dot) dot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+                    if (text) text.textContent = 'API-Key aktiv';
+                    if (hint) {
+                        hint.innerHTML = `<span class="text-emerald-400 font-semibold">✓ Gültiges Key-Format gespeichert (${key.slice(0, 6)}…${key.slice(-4)}). Bereit für KI-Generierung!</span>`;
+                    }
+                } else if (key) {
+                    if (dot) dot.className = 'w-2 h-2 rounded-full bg-amber-400';
+                    if (text) text.textContent = 'Key prüfen';
+                    if (hint) {
+                        hint.innerHTML = `<span class="text-amber-300">⚠️ Hinweis: Google Gemini API-Keys beginnen normalerweise mit <code>AIza...</code>.</span>`;
+                    }
+                } else {
+                    if (dot) dot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-pulse';
+                    if (text) text.textContent = 'API-Key fehlt';
+                    if (hint) {
+                        hint.innerHTML = `Bitte gib oben deinen kostenlosen Gemini API-Key (beginnt mit <code class="text-violet-300">AIza...</code>) ein.`;
+                    }
+                }
+            },
+
             // Helper to keep slide text punchy and uncluttered ("nicht zu voll")
             concise(str, maxWords = 8) {
                 if (!str) return '';
+                const limit = this.settings.improMode === 'balanced' ? maxWords + 4 : maxWords;
                 const words = String(str).trim().split(/\s+/);
-                if (words.length <= maxWords) return str;
-                return words.slice(0, maxWords).join(' ') + '…';
+                if (words.length <= limit) return str;
+                return words.slice(0, limit).join(' ') + '…';
             },
 
             loadStoredData() {
@@ -2255,8 +2360,6 @@
 
             /* ============================================================================
              * 4. EXECUTIVE-GRADE, UNCLUTTERED 12-SLIDE RENDERING ENGINE
-             * High-precision SVG charts (McKinsey / Economist style), real photography,
-             * generous whitespace, and ultra-short text hooks for maximum improvisation.
              * ============================================================================ */
             renderCurrentSlide() {
                 const slide = this.activeSlides[this.currentSlideIndex];
@@ -2332,7 +2435,6 @@
                 }
             },
 
-            // 1. TITLE SLIDE (Breathable Split with High-Res Cover Photo)
             renderTitleSlide(s, num) {
                 const photo = ImageEngine.resolveSlidePhoto(s, num);
                 const fallback = ImageEngine.getFallbackUrl(s.title, num);
@@ -2364,7 +2466,6 @@
                 `;
             },
 
-            // 2. BULLETS SLIDE (Max 3-4 ultra-concise points + Real Documentary Photo)
             renderBulletsSlide(s, num) {
                 const bullets = (s.bullets || []).slice(0, 3);
                 const photo = ImageEngine.resolveSlidePhoto(s, num);
@@ -2396,7 +2497,6 @@
                 `;
             },
 
-            // 3. BIG NUMBER / KPI SLIDE (Apple-Keynote Hero Metric + Visual Context Photo)
             renderBigNumberSlide(s, num) {
                 const photo = ImageEngine.resolveSlidePhoto(s, num);
                 const fallback = ImageEngine.getFallbackUrl(s.label || s.title, num + 3);
@@ -2425,7 +2525,6 @@
                 `;
             },
 
-            // 4. EXECUTIVE SVG COLUMN CHART (McKinsey / Economist Benchmark Style)
             renderBarChartSlide(s) {
                 const bars = (s.bars || []).slice(0, 5);
                 const vals = bars.map(b => Number(b.value) || 0);
@@ -2438,7 +2537,6 @@
                 const colWidth = 68;
                 const spacing = (620 - bars.length * colWidth) / Math.max(bars.length + 1, 2);
 
-                // Benchmark line at ~60% of max
                 const benchVal = Math.round(maxPos * 0.58);
                 const benchY = chartBottom - (benchVal / maxPos) * chartHeight;
 
@@ -2480,11 +2578,9 @@
                         <div class="flex-1 flex items-center justify-center w-full">
                             <svg viewBox="0 0 760 265" class="w-full max-h-60 sm:max-h-72 overflow-visible">
                                 ${gridLines}
-                                <!-- Zero Baseline -->
                                 <line x1="65" y1="${chartBottom}" x2="700" y2="${chartBottom}" stroke="currentColor" stroke-opacity="0.4" stroke-width="1.5" />
                                 <text x="54" y="${chartBottom + 4}" text-anchor="end" fill="currentColor" opacity="0.65" font-size="11" font-family="JetBrains Mono, monospace">0</text>
 
-                                <!-- Benchmark Reference Line -->
                                 <line x1="65" y1="${benchY}" x2="700" y2="${benchY}" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="6 4" />
                                 <rect x="595" y="${benchY - 18}" width="105" height="16" rx="4" fill="#f59e0b" />
                                 <text x="647" y="${benchY - 7}" text-anchor="middle" fill="#090d16" font-size="9.5" font-weight="800" font-family="JetBrains Mono, monospace">BENCHMARK: ${benchVal}</text>
@@ -2500,7 +2596,6 @@
                 `;
             },
 
-            // 5. HIGH-PRECISION SVG DONUT CHART SLIDE
             renderPieChartSlide(s) {
                 const slices = (s.slices || []).slice(0, 4);
                 const colors = ['#0284c7', '#8b5cf6', '#f59e0b', '#10b981'];
@@ -2558,7 +2653,6 @@
                 `;
             },
 
-            // 6. SMOOTH CUBIC-BEZIER SPLINE & GRADIENT AREA CHART SLIDE
             renderLineChartSlide(s) {
                 const pts = (s.points || []).slice(0, 6);
                 const values = pts.map(p => Number(p.value) || 0);
@@ -2577,7 +2671,6 @@
                     return { x, y, label: p.label, val: Number(p.value) || 0 };
                 });
 
-                // Build smooth cubic-bezier path
                 let pathD = '';
                 coords.forEach((pt, i) => {
                     if (i === 0) {
@@ -2594,7 +2687,6 @@
                     ? `${pathD} L ${coords[coords.length - 1].x},${bottomY} L ${coords[0].x},${bottomY} Z`
                     : '';
 
-                // Find peak anomaly point (largest jump or max value)
                 let peakIdx = 0;
                 let maxDiff = -1;
                 coords.forEach((c, idx) => {
@@ -2625,11 +2717,9 @@
                                 ${yTicks}
                                 <line x1="${leftX}" y1="${bottomY}" x2="${rightX}" y2="${bottomY}" stroke="currentColor" stroke-opacity="0.35" stroke-width="1.5" />
 
-                                <!-- Area & Smooth Spline Curve -->
                                 ${areaD ? `<path d="${areaD}" fill="url(#execAreaGrad)" />` : ''}
                                 <path d="${pathD}" fill="none" stroke="var(--slide-accent)" stroke-width="4" stroke-linecap="round" />
 
-                                <!-- Data Nodes -->
                                 ${coords.map((c, idx) => {
                                     const isPeak = idx === peakIdx;
                                     return `
@@ -2654,7 +2744,6 @@
                 `;
             },
 
-            // 7. SLEEK HORIZONTAL TIMELINE / CHEVRON PROCESS FLOW
             renderProcessSlide(s) {
                 const steps = (s.steps || []).slice(0, 4);
                 return `
@@ -2679,7 +2768,6 @@
                 `;
             },
 
-            // 8. CLEAN TWO-COLUMN CONTRAST SLIDE
             renderComparisonSlide(s) {
                 const left = (s.leftItems || []).slice(0, 3);
                 const right = (s.rightItems || []).slice(0, 3);
@@ -2717,7 +2805,6 @@
                 `;
             },
 
-            // 9. EXECUTIVE 2x2 STRATEGIC SCATTER MATRIX (SVG)
             renderMatrixSlide(s) {
                 const quads = s.quadrants || ['Quadrant I', 'Quadrant II', 'Quadrant III', 'Quadrant IV'];
                 const pts = (s.points || []).slice(0, 4);
@@ -2725,31 +2812,25 @@
                 return `
                     <div class="flex items-center justify-center h-full">
                         <svg viewBox="0 0 760 285" class="w-full max-h-64 sm:max-h-72 overflow-visible">
-                            <!-- 4 Quadrant Boxes -->
                             <rect x="90" y="15" width="295" height="115" rx="8" fill="currentColor" fill-opacity="0.04" />
                             <rect x="395" y="15" width="295" height="115" rx="8" fill="var(--slide-accent)" fill-opacity="0.09" />
                             <rect x="90" y="140" width="295" height="115" rx="8" fill="currentColor" fill-opacity="0.04" />
                             <rect x="395" y="140" width="295" height="115" rx="8" fill="currentColor" fill-opacity="0.04" />
 
-                            <!-- Quadrant Corner Watermarks -->
                             <text x="104" y="36" fill="currentColor" opacity="0.45" font-size="10" font-weight="700" font-family="JetBrains Mono, monospace">${(quads[0] || '').toUpperCase()}</text>
                             <text x="676" y="36" text-anchor="end" fill="var(--slide-accent)" font-size="10" font-weight="800" font-family="JetBrains Mono, monospace">${(quads[1] || '').toUpperCase()}</text>
                             <text x="104" y="242" fill="currentColor" opacity="0.45" font-size="10" font-weight="700" font-family="JetBrains Mono, monospace">${(quads[2] || '').toUpperCase()}</text>
                             <text x="676" y="242" text-anchor="end" fill="currentColor" opacity="0.45" font-size="10" font-weight="700" font-family="JetBrains Mono, monospace">${(quads[3] || '').toUpperCase()}</text>
 
-                            <!-- Center Crosshair Axes -->
                             <line x1="389" y1="15" x2="389" y2="255" stroke="currentColor" stroke-opacity="0.25" stroke-width="1.5" stroke-dasharray="5 4" />
                             <line x1="90" y1="135" x2="690" y2="135" stroke="currentColor" stroke-opacity="0.25" stroke-width="1.5" stroke-dasharray="5 4" />
 
-                            <!-- Outer Main Axes -->
                             <line x1="90" y1="255" x2="695" y2="255" stroke="var(--slide-primary)" stroke-width="2.5" />
                             <line x1="90" y1="255" x2="90" y2="12" stroke="var(--slide-primary)" stroke-width="2.5" />
 
-                            <!-- Axis Titles -->
                             <text x="390" y="278" text-anchor="middle" fill="currentColor" font-size="11.5" font-weight="700" font-family="JetBrains Mono, monospace">${this.concise(s.xAxis || 'Aufwand', 5)} →</text>
                             <text x="28" y="135" text-anchor="middle" transform="rotate(-90 28 135)" fill="currentColor" font-size="11.5" font-weight="700" font-family="JetBrains Mono, monospace">${this.concise(s.yAxis || 'Ertrag', 5)} →</text>
 
-                            <!-- Plotted Points -->
                             ${pts.map((p, idx) => {
                                 const px = Math.round(115 + (Math.max(10, Math.min(90, Number(p.x) || 50)) / 100) * 545);
                                 const py = Math.round(240 - (Math.max(10, Math.min(90, Number(p.y) || 50)) / 100) * 210);
@@ -2767,7 +2848,6 @@
                 `;
             },
 
-            // 10. FULL-STAGE DOCUMENTARY PHOTO & FORENSIC CAPTION SLIDE
             renderImageCaptionSlide(s, num) {
                 const photo = ImageEngine.resolveSlidePhoto(s, num);
                 const fallback = ImageEngine.getFallbackUrl(s.motif || s.title, num + 5);
@@ -2801,7 +2881,6 @@
                 `;
             },
 
-            // 11. EDITORIAL QUOTE + PORTRAIT PHOTO SLIDE
             renderQuoteSlide(s, num) {
                 const photo = ImageEngine.resolveSlidePhoto(s, num);
                 const fallback = ImageEngine.getFallbackUrl(s.author || s.title, num + 7);
@@ -2826,7 +2905,6 @@
                 `;
             },
 
-            // 12. CLOSING / Q&A SUMMARY SLIDE
             renderClosingSlide(s, num) {
                 const takeaways = (s.takeaways || []).slice(0, 3);
                 const photo = ImageEngine.resolveSlidePhoto(s, num);
@@ -3067,9 +3145,10 @@
             },
 
             /* ============================================================================
-             * 6. GEMINI AI PRESENTATION GENERATOR (CONCISE EXECUTIVE SLIDES + REAL PHOTOS)
+             * 6. GEMINI AI PRESENTATION GENERATOR (WITH AUTOMATIC MODEL FALLBACK & LOCAL SMART BACKUP)
              * ============================================================================ */
             openAiModal() {
+                this.syncApiKeyUi();
                 document.getElementById('aiErrorBox').classList.add('hidden');
                 document.getElementById('aiModalForm').classList.remove('hidden');
                 document.getElementById('aiModalLoading').classList.add('hidden');
@@ -3093,6 +3172,11 @@
             },
 
             async generateAiDeck(startImmediatelyBlind = false, isSecretSurprise = false) {
+                const inputKeyEl = document.getElementById('aiApiKeyInput');
+                if (inputKeyEl && inputKeyEl.value.trim()) {
+                    this.saveApiKeyFromInput(inputKeyEl.value);
+                }
+
                 const topicInput = document.getElementById('aiTopicInput').value.trim();
                 const chosenTopic = topicInput || RANDOM_AI_TOPICS[Math.floor(Math.random() * RANDOM_AI_TOPICS.length)];
                 const style = document.getElementById('aiStyleSelect').value;
@@ -3245,7 +3329,6 @@ Rhetorischer Stil: ${style}. Halte alle Texte extrem kurz und prägnant für max
                     const generated = await this.callGeminiWithBackoff(systemPrompt, userQuery, responseSchema);
                     const slides = generated.slides || [];
 
-                    // Enrich slides with real documentary photos from Wikimedia Commons + Fallback Pool
                     await Promise.all(slides.map(async (sl, idx) => {
                         const q = sl.imageQuery || sl.motif || chosenTopic;
                         const wikiUrl = await ImageEngine.fetchWikimediaPhoto(q);
@@ -3256,7 +3339,6 @@ Rhetorischer Stil: ${style}. Halte alle Texte extrem kurz und prägnant für max
                         }
                     }));
 
-                    // Optional AI image synthesis for key visual slide (#10) if selected
                     if (photoMode === 'ai_synth' && slides[9]) {
                         headline.textContent = '📸 Generiere maßgeschneidertes KI-Beweisfoto...';
                         const synthUrl = await ImageEngine.generateGeminiPhoto(slides[9].caption || chosenTopic);
@@ -3295,73 +3377,246 @@ Rhetorischer Stil: ${style}. Halte alle Texte extrem kurz und prägnant für max
                     document.getElementById('aiModalLoading').classList.add('hidden');
                     document.getElementById('aiModalForm').classList.remove('hidden');
                     const errBox = document.getElementById('aiErrorBox');
-                    errBox.textContent = 'Hinweis bei der KI-Generierung: ' + (err.message || 'Bitte versuche es erneut.');
+                    const errText = document.getElementById('aiErrorText');
+                    errText.textContent = 'Hinweis bei der Gemini-API-Anfrage: ' + (err.message || 'Bitte prüfe deinen API-Key oben im Feld.');
                     errBox.classList.remove('hidden');
                 }
             },
 
-       async callGeminiWithBackoff(systemPrompt, userQuery, responseSchema) {
-    // 1. Key aus localStorage holen oder abfragen
-    let apiKey = localStorage.getItem('kapopo_gemini_key');
-    if (!apiKey || apiKey.trim() === "" || apiKey === "null" || apiKey === "undefined") {
-        apiKey = prompt("Bitte gib deinen Google Gemini API-Key ein (beginnt mit AIza...):");
-        if (!apiKey || apiKey.trim() === "") {
-            throw new Error("Kein API-Key eingegeben. Abbruch.");
-        }
-        apiKey = apiKey.trim();
-        localStorage.setItem('kapopo_gemini_key', apiKey);
-    }
-
-    // 2. Offizieller Gemini 2.5 Flash Endpunkt
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`;
-
-    const payload = {
-        contents: [{ parts: [{ text: userQuery }] }],
-        systemInstruction: { parts: [{ text: systemPrompt }] },
-        generationConfig: {
-            responseMimeType: "application/json",
-            responseSchema: responseSchema
-        }
-    };
-
-    const delays = [1000, 2000, 4000];
-    let lastErr = null;
-
-    for (let attempt = 0; attempt <= delays.length; attempt++) {
-        try {
-            const res = await fetch(apiUrl, {
-                method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'x-goog-api-key': apiKey // Sendet die Identität sicher im Header
-                },
-                body: JSON.stringify(payload)
-            });
-
-            if (!res.ok) {
-                const errData = await res.json().catch(() => ({}));
-                const detailedMsg = errData?.error?.message || `HTTP ${res.status}`;
-                // Falls der Key abgelaufen/falsch ist, löschen, damit beim nächsten Mal neu gefragt wird
-                if (res.status === 400 || res.status === 403) {
-                    localStorage.removeItem('kapopo_gemini_key');
+            async callGeminiWithBackoff(systemPrompt, userQuery, responseSchema) {
+                let apiKey = this.getCleanApiKey();
+                if (!apiKey) {
+                    const prompted = prompt("Bitte gib deinen Google Gemini API-Key ein (beginnt mit AIza...):");
+                    if (prompted && prompted.trim()) {
+                        this.saveApiKeyFromInput(prompted);
+                        apiKey = this.getCleanApiKey();
+                    }
                 }
-                throw new Error(detailedMsg);
-            }
+                if (!apiKey) {
+                    throw new Error("Kein API-Key hinterlegt. Bitte trage oben im Feld 'Google Gemini API-Key' deinen Schlüssel (AIza...) ein.");
+                }
 
-            const data = await res.json();
-            const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (!text) throw new Error("Leere Antwort von Gemini erhalten.");
-            return JSON.parse(text);
+                const payload = {
+                    contents: [{ parts: [{ text: userQuery }] }],
+                    systemInstruction: { parts: [{ text: systemPrompt }] },
+                    generationConfig: {
+                        responseMimeType: "application/json",
+                        responseSchema: responseSchema
+                    }
+                };
 
-        } catch (e) {
-            lastErr = e;
-            if (attempt < delays.length) {
-                await new Promise(r => setTimeout(r, delays[attempt]));
-            }
-        }
-    }
-    throw lastErr;
-}
+                // Try gemini-2.5-flash first, then fallback to gemini-2.0-flash if needed
+                const models = ["gemini-2.5-flash", "gemini-2.0-flash"];
+                let lastErr = null;
+
+                for (const modelName of models) {
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${encodeURIComponent(apiKey)}`;
+                    try {
+                        const res = await fetch(apiUrl, {
+                            method: 'POST',
+                            headers: { 
+                                'Content-Type': 'application/json',
+                                'x-goog-api-key': apiKey
+                            },
+                            body: JSON.stringify(payload)
+                        });
+
+                        if (!res.ok) {
+                            const errData = await res.json().catch(() => ({}));
+                            const detailedMsg = errData?.error?.message || `HTTP ${res.status}`;
+                            throw new Error(detailedMsg);
+                        }
+
+                        const data = await res.json();
+                        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+                        if (!text) throw new Error("Leere Antwort von Gemini erhalten.");
+                        return JSON.parse(text);
+                    } catch (e) {
+                        lastErr = e;
+                    }
+                }
+                throw lastErr;
+            },
+
+            // Instant Local Smart Fallback Generator (works 100% without API key if needed)
+            async generateOfflineSmartDeck() {
+                const topicInput = document.getElementById('aiTopicInput').value.trim();
+                const chosenTopic = topicInput || RANDOM_AI_TOPICS[Math.floor(Math.random() * RANDOM_AI_TOPICS.length)];
+                const theme = document.getElementById('aiThemeSelect').value;
+                const category = document.getElementById('aiCategorySelect').value;
+                const shortHook = this.concise(chosenTopic, 5);
+
+                const slides = [
+                    {
+                        type: "title",
+                        title: chosenTopic,
+                        subtitle: "Empirische Sonderuntersuchung & Strategische Implikationen",
+                        presenter: "Dr. rer. pol. K. Improvisus • Sonderkommission",
+                        meta: "VERTRAULICHER SONDERBERICHT • Q4 AUDIT",
+                        imageQuery: chosenTopic
+                    },
+                    {
+                        type: "bullets",
+                        title: "Drei unbequeme Wahrheiten zum Einstieg",
+                        subtitle: "Was bisherige Studien systematisch verschwiegen haben",
+                        bullets: [
+                            "87% unterschätzen die tägliche Eskalationsdynamik",
+                            "Dunkelziffer seit 2023 um Faktor 4 gestiegen",
+                            "Bisherige Gegenmaßnahmen wirken rein kosmetisch"
+                        ],
+                        calloutTitle: "Kernbefund",
+                        calloutText: "Totalausfall klassischer Erklärungsmodelle ab 14:00 Uhr.",
+                        imageQuery: "office meeting analysis"
+                    },
+                    {
+                        type: "big_number",
+                        title: "Volkswirtschaftliche Gesamtauswirkung",
+                        number: "14,7 Mio. €",
+                        trend: "+218% gegenüber Vorjahr",
+                        label: `Jährlicher Kollateralschaden durch: ${shortHook}`,
+                        subtext: "Berechnet auf Basis von 1.420 anonymisierten Feldbeobachtungen.",
+                        imageQuery: "finance chart screen"
+                    },
+                    {
+                        type: "chart_bar",
+                        title: "Belastungs-Index im direkten Systemvergleich",
+                        subtitle: "Abweichung vom europäischen Referenzwert (in Indexpunkten)",
+                        unit: "Pkt.",
+                        bars: [
+                            { label: "Theorie-Modell", value: 22, note: "Laborwert" },
+                            { label: "Wunschdenken", value: 45, note: "Vorstand" },
+                            { label: "Alltags-Praxis", value: 78, note: "Kritisch" },
+                            { label: "Montagmorgen", value: 99, note: "Maximalwert" }
+                        ],
+                        insight: "In der realen Wildbahn liegt der Stresswert 4,5-mal höher als im Handbuch."
+                    },
+                    {
+                        type: "chart_pie",
+                        title: "Ursachenverteilung laut Feldstudie",
+                        subtitle: "Befragung von 850 direkt Betroffenen",
+                        slices: [
+                            { label: "Taktisches Ignorieren des Problems", value: 46 },
+                            { label: "Historisch gewachsenes Chaos", value: 27 },
+                            { label: "Fehlende Zuständigkeit ab Freitag", value: 18 },
+                            { label: "Tatsächliche Sachkompetenz", value: 9 }
+                        ],
+                        takeaway: "Fast die Hälfte aller Beteiligten hofft, dass sich das Phänomen von selbst auflöst."
+                    },
+                    {
+                        type: "chart_line",
+                        title: "Chronologische Eskalationskurve",
+                        subtitle: "Verlauf über einen typischen 6-Phasen-Zyklus",
+                        points: [
+                            { label: "Phase 1", value: 18 },
+                            { label: "Phase 2", value: 31 },
+                            { label: "Phase 3", value: 44 },
+                            { label: "Kipppunkt", value: 97 },
+                            { label: "Panik", value: 84 },
+                            { label: "Neustart", value: 62 }
+                        ],
+                        annotation: "Kipppunkt: Jemand fragt 'Haben wir dafür eigentlich ein Konzept?'",
+                        yLabel: "Chaos-Faktor"
+                    },
+                    {
+                        type: "process",
+                        title: "Die 4-stufige Kausalkette",
+                        subtitle: "Vom harmlosen Auslöser zum Systemkollaps",
+                        steps: [
+                            { step: "Stufe 01", title: "Auslöser", desc: "Harmlose Detailfrage wird komplett falsch verstanden" },
+                            { step: "Stufe 02", title: "Kettenreaktion", desc: "Drei Abteilungen gründen einen Arbeitskreis" },
+                            { step: "Stufe 03", title: "Eigendynamik", desc: "Ursprüngliches Ziel gerät völlig in Vergessenheit" },
+                            { step: "Stufe 04", title: "Endzustand", desc: "Niemand weiß mehr, warum wir hier stehen" }
+                        ]
+                    },
+                    {
+                        type: "comparison",
+                        title: "Anspruch vs. Wirklichkeit",
+                        subtitle: "Gegenüberstellung der beiden Denkschulen",
+                        leftTitle: "Klassischer Ansatz (Bisher)",
+                        leftItems: [
+                            "Basiert auf reinem Bauchgefühl",
+                            "Scheitert bereits bei leichtem Gegenwind",
+                            "Verursacht endlose Rückfragen"
+                        ],
+                        rightTitle: "Neue Strategie 2027",
+                        rightItems: [
+                            "Vollautomatisierte Ausreden-Matrix",
+                            "100% souveränes Pokerface garantiert",
+                            "Sofortige Delegierbarkeit an Praktikanten"
+                        ]
+                    },
+                    {
+                        type: "matrix",
+                        title: "Strategische 2x2 Entscheidungs-Matrix",
+                        subtitle: "Komplexität (X) vs. Überraschungseffekt (Y)",
+                        xAxis: "Operativer Erklärungsaufwand",
+                        yAxis: "Publikums-Verblüffung",
+                        quadrants: ["Geheimtipp", "Königsklasse", "Standard-Alltag", "Bürokratie-Falle"],
+                        points: [
+                            { name: "Plan A", x: 24, y: 82 },
+                            { name: "Plan B (Notfall)", x: 84, y: 88 },
+                            { name: "Aussitzen", x: 18, y: 22 },
+                            { name: "Sonderausschuss", x: 78, y: 26 }
+                        ]
+                    },
+                    {
+                        type: "image_caption",
+                        title: "Forensische Dokumentation vor Ort",
+                        figureLabel: "Abb. 8.3: Ungeschönte Momentaufnahme aus dem Feldversuch",
+                        caption: `Hier zeigt sich die ganze Tragweite von "${shortHook}" unter Realbedingungen.`,
+                        notes: [
+                            "Messgeräte zeigten deutliche Ausschläge",
+                            "Keiner der Anwesenden wollte die Verantwortung übernehmen"
+                        ],
+                        imageQuery: chosenTopic
+                    },
+                    {
+                        type: "quote",
+                        quote: "Wir hatten zwar keinen Plan, aber wir haben ihn mit beeindruckender Präzision durchgezogen.",
+                        author: "Prof. Dr. H. Scheinheilig",
+                        role: "Vorsitzender der Untersuchungskommission",
+                        context: "Aus dem Abschlussbericht Seite 404",
+                        imageQuery: "boardroom conference"
+                    },
+                    {
+                        type: "closing",
+                        title: "Vielen Dank! Gibt es noch Fragen?",
+                        subtitle: "Für Risiken und Nebenwirkungen haftet der Vorredner.",
+                        takeaways: [
+                            "Souveränes Auftreten ersetzt fehlende Detailkenntnis",
+                            "Jedes Diagramm wirkt mit Laserpointer 40% seriöser",
+                            "Ab Montag setzen wir alles genau so um"
+                        ],
+                        contact: "Taskforce Sonderanalyse • Durchwahl -007",
+                        imageQuery: "applause stage"
+                    }
+                ];
+
+                await Promise.all(slides.map(async (sl, idx) => {
+                    const wikiUrl = await ImageEngine.fetchWikimediaPhoto(sl.imageQuery || chosenTopic);
+                    sl.photoUrl = wikiUrl || ImageEngine.getFallbackUrl(sl.imageQuery || chosenTopic, idx);
+                }));
+
+                const newDeck = {
+                    id: 'ai-deck-' + Date.now(),
+                    title: chosenTopic,
+                    subtitle: "Sonderanalyse & Strategischer Stresstest",
+                    category: category,
+                    theme: theme,
+                    difficulty: 'Smart-Deck',
+                    author: 'Dr. rer. pol. K. Improvisus',
+                    org: 'Institut für Angewandte Improvisation',
+                    isAI: true,
+                    slides: slides
+                };
+
+                this.customDecks.unshift(newDeck);
+                this.saveCustomDecks();
+                this.renderDeckGrid();
+                this.closeAiModal();
+                document.getElementById('aiTopicInput').value = '';
+                this.showToast('⚡ 12-Folien-Deck erfolgreich generiert!');
+            },
 
             deleteCustomDeck(id) {
                 this.customDecks = this.customDecks.filter(d => d.id !== id);
