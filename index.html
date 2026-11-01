@@ -223,7 +223,7 @@
             <!-- Right Controls -->
             <div class="flex items-center gap-2 sm:gap-2.5">
                 <!-- API Key Status Button -->
-                <button onclick="app.openAiModal()" class="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium border bg-slate-900/90 border-slate-700/80 text-slate-300 hover:border-violet-500/50 transition-all" title="Gemini API-Key verwalten">
+                <button onclick="app.openAiModal()" class="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium border bg-slate-900/90 border-slate-700/80 text-slate-300 hover:border-violet-500/50 transition-all" title="Gemini API Key - KaPoPo verwalten">
                     <span id="apiKeyStatusDot" class="w-2 h-2 rounded-full bg-amber-400"></span>
                     <i data-lucide="key-round" class="w-3.5 h-3.5 text-violet-400"></i>
                     <span id="apiKeyStatusText" class="hidden lg:inline">API-Key</span>
@@ -543,14 +543,14 @@
                     <div class="flex items-center justify-between gap-2 flex-wrap">
                         <label for="aiApiKeyInput" class="text-xs font-bold text-violet-300 flex items-center gap-1.5">
                             <i data-lucide="key-round" class="w-3.5 h-3.5"></i>
-                            <span>Google Gemini API-Key (wird lokal im Browser gespeichert)</span>
+                            <span>Google Gemini API Key - KaPoPo (wird lokal im Browser gespeichert)</span>
                         </label>
                         <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener" class="text-[11px] font-semibold text-fuchsia-400 hover:text-fuchsia-300 underline">
                             Kostenlosen Key im Google AI Studio holen ↗
                         </a>
                     </div>
                     <div class="flex gap-2">
-                        <input id="aiApiKeyInput" type="password" placeholder="AIzaSy... (hier deinen Gemini API-Key einfügen)" oninput="app.saveApiKeyFromInput(this.value)" class="flex-1 bg-slate-950 border border-slate-700 focus:border-violet-500 rounded-xl px-3.5 py-2 text-xs sm:text-sm font-mono text-white placeholder-slate-500 focus:outline-none transition">
+                        <input id="aiApiKeyInput" type="password" placeholder="AQ.Ab8RN6Lp72l4Xi6PZXBixixWj-Ys6O4s95MYfxEnlx1xKM9kpA" oninput="app.saveApiKeyFromInput(this.value)" class="flex-1 bg-slate-950 border border-slate-700 focus:border-violet-500 rounded-xl px-3.5 py-2 text-xs sm:text-sm font-mono text-white placeholder-slate-500 focus:outline-none transition">
                         <button type="button" onclick="app.toggleApiKeyVisibility()" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700 transition" title="Key anzeigen/verbergen">
                             👁️
                         </button>
