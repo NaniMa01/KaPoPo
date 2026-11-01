@@ -808,7 +808,7 @@
 
             async generateGeminiPhoto(promptText) {
                 try {
-                    const apiKey = "";
+                    const apiKey = "AQ.Ab8RN6Lp72l4Xi6PZXBixixWj-Ys6O4s95MYfxEnlx1xKM9kpA";
                     const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-image:generateContent?key=${apiKey}`;
                     const payload = {
                         contents: [{ parts: [{ text: `Realistic documentary press photograph, natural lighting, 16:9 editorial photography, no text overlay: ${promptText}` }] }],
@@ -3298,18 +3298,28 @@ Rhetorischer Stil: ${style}. Halte alle Texte extrem kurz und prägnant für max
                 }
             },
 
-            async callGeminiWithBackoff(systemPrompt, userQuery, responseSchema) {
-                const apiKey = "";
-                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+        async callGeminiWithBackoff(systemPrompt, userQuery, responseSchema) {
+    // 1. Prüfen, ob bereits ein Key gespeichert ist, sonst Nutzer fragen:
+    let apiKey = localStorage.getItem('kapopo_gemini_key');
+    if (!apiKey) {
+        apiKey = prompt("Bitte gib deinen Google Gemini API-Key ein (wird nur lokal in deinem Browser gespeichert):");
+        if (!apiKey) throw new Error("Kein API-Key angegeben. Abbruch.");
+        localStorage.setItem('kapopo_gemini_key', apiKey.trim());
+    }
 
-                const payload = {
-                    contents: [{ parts: [{ text: userQuery }] }],
-                    systemInstruction: { parts: [{ text: systemPrompt }] },
-                    generationConfig: {
-                        responseMimeType: "application/json",
-                        responseSchema: responseSchema
-                    }
-                };
+    // 2. API-Endpunkt aufrufen:
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
+
+    const payload = {
+        contents: [{ parts: [{ text: userQuery }] }],
+        systemInstruction: { parts: [{ text: systemPrompt }] },
+        generationConfig: {
+            responseMimeType: "application/json",
+            responseSchema: responseSchema
+        }
+    };
+
+    // ... Rest der bestehenden Funktion bleibt gleich
 
                 const delays = [1000, 2000, 4000];
                 let lastErr = null;
