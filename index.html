@@ -846,7 +846,7 @@
                     const rawKey = localStorage.getItem('kapopo_gemini_key') || '';
                     const apiKey = rawKey.replace(/["'\s]/g, '');
                     if (!apiKey) return null;
-                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent?key=${encodeURIComponent(apiKey)}`;
+                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-exp-image-generation:generateContent?key=${encodeURIComponent(apiKey)}`;
                     const payload = {
                         contents: [{ parts: [{ text: `Realistic documentary press photograph, natural lighting, 16:9 editorial photography, no text overlay: ${promptText}` }] }],
                         generationConfig: { responseModalities: ["TEXT", "IMAGE"] }
@@ -3405,8 +3405,8 @@ Rhetorischer Stil: ${style}. Halte alle Texte extrem kurz und prägnant für max
                     }
                 };
 
-                // Try gemini-2.5-flash first, then fallback to gemini-2.0-flash if needed
-                const models = ["gemini-2.5-flash", "gemini-2.0-flash"];
+                // Try gemini-2.5-flash first, then fallback to gemini-3.5-flash if needed
+                const models = ["gemini-3.5-flash lite"];
                 let lastErr = null;
 
                 for (const modelName of models) {
