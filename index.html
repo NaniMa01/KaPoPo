@@ -3298,17 +3298,20 @@ Rhetorischer Stil: ${style}. Halte alle Texte extrem kurz und prägnant für max
                 }
             },
 
-        async callGeminiWithBackoff(systemPrompt, userQuery, responseSchema) {
-    // 1. Prüfen, ob bereits ein Key gespeichert ist, sonst Nutzer fragen:
+       async callGeminiWithBackoff(systemPrompt, userQuery, responseSchema) {
+    // 1. Key aus localStorage holen oder abfragen
     let apiKey = localStorage.getItem('kapopo_gemini_key');
-    if (!apiKey) {
-        apiKey = prompt("Bitte gib deinen Google Gemini API-Key ein (wird nur lokal in deinem Browser gespeichert):");
-        if (!apiKey) throw new Error("Kein API-Key angegeben. Abbruch.");
-        localStorage.setItem('kapopo_gemini_key', apiKey.trim());
+    if (!apiKey || apiKey.trim() === "" || apiKey === "null" || apiKey === "undefined") {
+        apiKey = prompt("Bitte gib deinen Google Gemini API-Key ein (beginnt mit AIza...):");
+        if (!apiKey || apiKey.trim() === "") {
+            throw new Error("Kein API-Key eingegeben. Abbruch.");
+        }
+        apiKey = apiKey.trim();
+        localStorage.setItem('kapopo_gemini_key', apiKey);
     }
 
-    // 2. API-Endpunkt aufrufen:
-    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
+    // 2. Offizieller Gemini 2.5 Flash Endpunkt
+    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`;
 
     const payload = {
         contents: [{ parts: [{ text: userQuery }] }],
@@ -3319,32 +3322,44 @@ Rhetorischer Stil: ${style}. Halte alle Texte extrem kurz und prägnant für max
         }
     };
 
-    // ... Rest der bestehenden Funktion bleibt gleich
+    const delays = [1000, 2000, 4000];
+    let lastErr = null;
 
-                const delays = [1000, 2000, 4000];
-                let lastErr = null;
+    for (let attempt = 0; attempt <= delays.length; attempt++) {
+        try {
+            const res = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'x-goog-api-key': apiKey // Sendet die Identität sicher im Header
+                },
+                body: JSON.stringify(payload)
+            });
 
-                for (let attempt = 0; attempt <= delays.length; attempt++) {
-                    try {
-                        const res = await fetch(apiUrl, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify(payload)
-                        });
-                        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                        const data = await res.json();
-                        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-                        if (!text) throw new Error("Leere KI-Antwort");
-                        return JSON.parse(text);
-                    } catch (e) {
-                        lastErr = e;
-                        if (attempt < delays.length) {
-                            await new Promise(r => setTimeout(r, delays[attempt]));
-                        }
-                    }
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                const detailedMsg = errData?.error?.message || `HTTP ${res.status}`;
+                // Falls der Key abgelaufen/falsch ist, löschen, damit beim nächsten Mal neu gefragt wird
+                if (res.status === 400 || res.status === 403) {
+                    localStorage.removeItem('kapopo_gemini_key');
                 }
-                throw lastErr;
-            },
+                throw new Error(detailedMsg);
+            }
+
+            const data = await res.json();
+            const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (!text) throw new Error("Leere Antwort von Gemini erhalten.");
+            return JSON.parse(text);
+
+        } catch (e) {
+            lastErr = e;
+            if (attempt < delays.length) {
+                await new Promise(r => setTimeout(r, delays[attempt]));
+            }
+        }
+    }
+    throw lastErr;
+}
 
             deleteCustomDeck(id) {
                 this.customDecks = this.customDecks.filter(d => d.id !== id);
