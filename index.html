@@ -806,27 +806,29 @@
                 return null;
             },
 
-            async generateGeminiPhoto(promptText) {
-                try {
-                    const apiKey = "AQ.Ab8RN6Lp72l4Xi6PZXBixixWj-Ys6O4s95MYfxEnlx1xKM9kpA";
-                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite-image:generateContent?key=${apiKey}`;
-                    const payload = {
-                        contents: [{ parts: [{ text: `Realistic documentary press photograph, natural lighting, 16:9 editorial photography, no text overlay: ${promptText}` }] }],
-                        generationConfig: { responseModalities: ["TEXT", "IMAGE"] }
-                    };
-                    const res = await fetch(apiUrl, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify(payload)
-                    });
-                    if (!res.ok) return null;
-                    const result = await res.json();
-                    const base64Data = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
-                    if (base64Data) return `data:image/png;base64,${base64Data}`;
-                } catch (e) {}
-                return null;
-            }
+          async generateGeminiPhoto(promptText) {
+    try {
+        const apiKey = localStorage.getItem('kapopo_gemini_key');
+        if (!apiKey) return null;
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`;
+        const payload = {
+            contents: [{ parts: [{ text: `Editorial documentary press photograph, 16:9 photography, clean background: ${promptText}` }] }]
         };
+        const res = await fetch(apiUrl, {
+            method: "POST",
+            headers: { 
+                "Content-Type": "application/json",
+                "x-goog-api-key": apiKey
+            },
+            body: JSON.stringify(payload)
+        });
+        if (!res.ok) return null;
+        const result = await res.json();
+        const base64Data = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
+        if (base64Data) return `data:image/png;base64,${base64Data}`;
+    } catch (e) {}
+    return null;
+}
 
         /* ============================================================================
          * 2. ORIGINAL KAPOPO PRE-INSTALLED LIBRARY (6 FULL 12-SLIDE DECKS)
