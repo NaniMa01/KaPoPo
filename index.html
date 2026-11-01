@@ -3383,7 +3383,7 @@ Rhetorischer Stil: ${style}. Halte alle Texte extrem kurz und prägnant für max
                 }
             },
 
-            async callGeminiWithBackoff(systemPrompt, userQuery, responseSchema) {
+          async callGeminiWithBackoff(systemPrompt, userQuery, responseSchema) {
                 let apiKey = this.getCleanApiKey();
                 if (!apiKey) {
                     const prompted = prompt("Bitte gib deinen Google Gemini API-Key ein (beginnt mit AIza...):");
@@ -3405,12 +3405,13 @@ Rhetorischer Stil: ${style}. Halte alle Texte extrem kurz und prägnant für max
                     }
                 };
 
-                // Try gemini-2.5-flash first, then fallback to gemini-3.5-flash if needed
-                const models = ["gemini-3.5-flash lite"];
+                // Aktuelles Gemini 3.8 Flash Modell verwenden
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${encodeURIComponent(apiKey)}`;
+
+                const delays = [1000, 2000];
                 let lastErr = null;
 
-                for (const modelName of models) {
-                    const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${encodeURIComponent(apiKey)}`;
+                for (let attempt = 0; attempt <= delays.length; attempt++) {
                     try {
                         const res = await fetch(apiUrl, {
                             method: 'POST',
@@ -3433,6 +3434,9 @@ Rhetorischer Stil: ${style}. Halte alle Texte extrem kurz und prägnant für max
                         return JSON.parse(text);
                     } catch (e) {
                         lastErr = e;
+                        if (attempt < delays.length) {
+                            await new Promise(r => setTimeout(r, delays[attempt]));
+                        }
                     }
                 }
                 throw lastErr;
